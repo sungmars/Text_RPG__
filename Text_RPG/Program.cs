@@ -15,6 +15,7 @@ namespace Text_RPG_Console
             public int df { get; set; } = 5;
             public int hp { get; set; } = 100;
             public int gold { get; set; } = 1500;  // 초기 골드
+            //테스트 커밋
         }
 
     }
