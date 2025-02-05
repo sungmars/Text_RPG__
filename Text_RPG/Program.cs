@@ -21,11 +21,11 @@ namespace Text_RPG_Console
         class Manager
         {
             private Player player;
+            public int num;
             public Manager(Player p)
             {
                 player = p;
             }
-            public int num;
             public void HelloPlayer()
             {
                 Console.WriteLine("스파르타 마을에 오신 여러분 환영합니다.");
@@ -36,23 +36,23 @@ namespace Text_RPG_Console
             {
                 Console.WriteLine("===================================================================");
                 Console.WriteLine("반갑습니다. " + player.name + ". 이곳에서 던전으로 들어가기전 활동을 할 수 있습니다.\n");
-                Console.WriteLine("1. 상태 보기\n2. 인벤토리\n3. 상점\n");
+                Console.WriteLine("1. 상태 보기\n2. 인벤토리\n3. 상점\n4. 던전입장\n");
                 Console.Write("원하시는 행동을 입력해주세요\n>> ");
                 num = int.Parse(Console.ReadLine());
             }
         }
 
-        // 상태창 (플레이어의 능력치 등 표시)
+        // 상태창 클래스 (플레이어의 능력치 표시)
         class Status
         {
             private Player player;
             private Inventory inventory;
+            public int num;
             public Status(Player p, Inventory I)
             {
                 player = p;
                 inventory = I;
             }
-            public int num;
             public void status()
             {
                 int bonusAtt = inventory.Attup();
@@ -76,7 +76,7 @@ namespace Text_RPG_Console
             }
         }
 
-        // 인벤토리 클래스 (기존 아이템 목록 + 장착/해제 기능)
+        // 인벤토리 클래스 (아이템 관리)
         class Inventory
         {
             public string[] items = { };
@@ -183,7 +183,7 @@ namespace Text_RPG_Console
                 }
                 return dfup;
             }
-            // 상점에서 아이템 구매 시 인벤토리에 추가하기 위한 메서드
+            // 상점 혹은 던전 클리어 시 인벤토리에 아이템 추가
             public void AddItem(string newItem)
             {
                 List<string> temp = new List<string>(items);
@@ -333,6 +333,142 @@ namespace Text_RPG_Console
             }
         }
 
+        // 던전 클래스 (던전 입장 및 진행)
+        class Dungeon
+        {
+            private Player player;
+            private Inventory inventory;
+            private Random rand;
+            public Dungeon(Player p, Inventory inv)
+            {
+                player = p;
+                inventory = inv;
+                rand = new Random();
+            }
+            public void DungeonManager()
+            {
+                while (true)
+                {
+                    Console.WriteLine("===================================================================");
+                    Console.WriteLine("**던전입장**");
+                    Console.WriteLine("이곳에서 던전으로 들어가기전 활동을 할 수 있습니다.\n");
+                    Console.WriteLine("1. 쉬운 던전     | 방어력 5 이상 권장");
+                    Console.WriteLine("2. 일반 던전     | 방어력 11 이상 권장");
+                    Console.WriteLine("3. 어려운 던전    | 방어력 17 이상 권장");
+                    Console.WriteLine("0. 나가기");
+                    Console.Write("\n원하시는 행동을 입력해주세요.\n>> ");
+                    int choice;
+                    if (!int.TryParse(Console.ReadLine(), out choice))
+                    {
+                        Console.WriteLine("잘못된 입력입니다.");
+                        continue;
+                    }
+                    if (choice == 0)
+                    {
+                        break;
+                    }
+                    int recommendedDefense = 0;
+                    int baseReward = 0;
+                    string dungeonName = "";
+                    switch (choice)
+                    {
+                        case 1:
+                            recommendedDefense = 5;
+                            baseReward = 1000;
+                            dungeonName = "쉬운 던전";
+                            break;
+                        case 2:
+                            recommendedDefense = 11;
+                            baseReward = 1700;
+                            dungeonName = "일반 던전";
+                            break;
+                        case 3:
+                            recommendedDefense = 17;
+                            baseReward = 2500;
+                            dungeonName = "어려운 던전";
+                            break;
+                        default:
+                            Console.WriteLine("잘못된 입력입니다.");
+                            continue;
+                    }
+
+                    // 내 총 방어력과 공격력 (기본 능력치 + 인벤토리 보너스)
+                    int bonusDf = inventory.Dfup();
+                    int totalDefense = player.df + bonusDf;
+                    int bonusAtt = inventory.Attup();
+                    int totalAttack = player.att + bonusAtt;
+
+                    Console.WriteLine("===================================================================");
+                    Console.WriteLine($"던전 도전 : {dungeonName}");
+                    Console.WriteLine($"추천 방어력 : {recommendedDefense} | 내 방어력 : {totalDefense}");
+
+                    bool dungeonFailed = false;
+                    // 내 방어력이 추천치 미만인 경우 40% 실패 확률 적용
+                    if (totalDefense < recommendedDefense)
+                    {
+                        int chance = rand.Next(100); // 0 ~ 99
+                        if (chance < 40)
+                        {
+                            dungeonFailed = true;
+                        }
+                    }
+
+                    // 기본 체력 소모량 : 20 ~ 35 랜덤
+                    int baseDamage = rand.Next(20, 36);
+                    // 조정값: (추천 방어력 - 내 방어력)
+                    int damageAdjustment = recommendedDefense - totalDefense;
+                    int totalDamage = baseDamage + damageAdjustment;
+                    totalDamage = Math.Max(0, totalDamage);
+                    if (dungeonFailed)
+                    {
+                        // 실패 시 체력 소모는 계산된 데미지의 절반
+                        totalDamage = totalDamage / 2;
+                    }
+
+                    int initialHP = player.hp;
+                    player.hp -= totalDamage;
+
+                    int initialGold = player.gold;
+                    int reward = 0;
+                    if (!dungeonFailed)
+                    {
+                        // 추가 보상: 기본 보상의 (내 총 공격력 ~ 내 총 공격력*2)% 범위 내 랜덤 퍼센트 적용
+                        int bonusPercentage = rand.Next(totalAttack, totalAttack * 2 + 1);
+                        int additionalReward = baseReward * bonusPercentage / 100;
+                        reward = baseReward + additionalReward;
+                        player.gold += reward;
+                    }
+
+                    Console.WriteLine();
+                    if (dungeonFailed)
+                    {
+                        Console.WriteLine("**던전 실패**");
+                        Console.WriteLine("아쉽게도 던전 도중에 실패하였습니다.");
+                    }
+                    else
+                    {
+                        Console.WriteLine("**던전 클리어**");
+                        Console.WriteLine("축하합니다!!");
+                        Console.WriteLine($"{dungeonName}을(를) 클리어 하였습니다.");
+                    }
+                    Console.WriteLine();
+                    Console.WriteLine("[탐험 결과]");
+                    Console.WriteLine($"체력 {initialHP} -> {player.hp}");
+                    if (!dungeonFailed)
+                    {
+                        Console.WriteLine($"Gold {initialGold} G -> {player.gold} G ");
+                    }
+                    else
+                    {
+                        Console.WriteLine("Gold 변화 없음");
+                    }
+                    Console.WriteLine("\n0. 나가기");
+                    Console.Write("원하시는 행동을 입력해주세요.\n>> ");
+                    int exitInput = int.Parse(Console.ReadLine());
+                }
+            }
+        }
+
         // 메인 메서드
         static void Main(string[] args)
         {
@@ -383,6 +519,10 @@ namespace Text_RPG_Console
                     case 3:
                         Shop shop = new Shop(player, I);
                         shop.ShopManager();
+                        break;
+                    case 4:
+                        Dungeon dungeon = new Dungeon(player, I);
+                        dungeon.DungeonManager();
                         break;
                     default:
                         Console.WriteLine("잘못된 입력입니다.");
