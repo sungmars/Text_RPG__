@@ -381,7 +381,6 @@ namespace Text_RPG_Console
                     EndInventoryLoop:
                         break;
                     case 3:
-                        // 상점 실행
                         Shop shop = new Shop(player, I);
                         shop.ShopManager();
                         break;
