@@ -15,7 +15,6 @@ namespace Text_RPG_Console
             public int df { get; set; } = 5;
             public int hp { get; set; } = 100;
             public int gold { get; set; } = 1500;  // 초기 골드
-            //테스트 커밋
         }
 
         // 게임 초기 설정 및 메인 메뉴 관리
@@ -43,6 +42,39 @@ namespace Text_RPG_Console
             }
         }
 
-        
+        // 상태창 (플레이어의 능력치 등 표시)
+        class Status
+        {
+            private Player player;
+            private Inventory inventory;
+            public Status(Player p, Inventory I)
+            {
+                player = p;
+                inventory = I;
+            }
+            public int num;
+            public void status()
+            {
+                int bonusAtt = inventory.Attup();
+                int bonusDf = inventory.Dfup();
+                int totalAtt = player.att + bonusAtt;
+                int totalDf = player.df + bonusDf;
+                string attBonusDisplay = bonusAtt != 0 ? " (+" + bonusAtt + ")" : "";
+                string dfBonusDisplay = bonusDf != 0 ? " (+" + bonusDf + ")" : "";
+                Console.WriteLine("===================================================================");
+                Console.WriteLine("<<상태보기>>");
+                Console.WriteLine("캐릭터의 정보가 표시됩니다\n");
+                Console.WriteLine("Lv. " + player.lv);
+                Console.WriteLine(player.name + " " + player.job);
+                Console.WriteLine("공격력 : " + totalAtt + attBonusDisplay);
+                Console.WriteLine("방어력 : " + totalDf + dfBonusDisplay);
+                Console.WriteLine("체력 : " + player.hp);
+                Console.WriteLine("Gold : " + player.gold + " G\n");
+                Console.WriteLine("0. 나가기\n");
+                Console.Write("원하시는 행동을 입력해주세요\n>> ");
+                num = int.Parse(Console.ReadLine());
+            }
+        }
+
     }
 }
